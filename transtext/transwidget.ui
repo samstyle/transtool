@@ -1,0 +1,495 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>TTWidget</class>
+ <widget class="QWidget" name="TTWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>901</width>
+    <height>417</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,10">
+   <item>
+    <widget class="QTreeWidget" name="tree">
+     <property name="contextMenuPolicy">
+      <enum>Qt::CustomContextMenu</enum>
+     </property>
+     <property name="editTriggers">
+      <set>QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed|QAbstractItemView::SelectedClicked</set>
+     </property>
+     <property name="dragDropMode">
+      <enum>QAbstractItemView::InternalMove</enum>
+     </property>
+     <property name="defaultDropAction">
+      <enum>Qt::MoveAction</enum>
+     </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::ExtendedSelection</enum>
+     </property>
+     <attribute name="headerVisible">
+      <bool>false</bool>
+     </attribute>
+     <column>
+      <property name="text">
+       <string notr="true">1</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="tabs" native="true">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <layout class="QGridLayout" name="editGrid" columnstretch="0,10">
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="trnline">
+          <property name="contextMenuPolicy">
+           <enum>Qt::ActionsContextMenu</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="srcline">
+          <property name="contextMenuPolicy">
+           <enum>Qt::ActionsContextMenu</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLineEdit" name="srcname"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLineEdit" name="trnname"/>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QTableView" name="table">
+        <property name="contextMenuPolicy">
+         <enum>Qt::CustomContextMenu</enum>
+        </property>
+        <property name="editTriggers">
+         <set>QAbstractItemView::NoEditTriggers</set>
+        </property>
+        <property name="selectionBehavior">
+         <enum>QAbstractItemView::SelectRows</enum>
+        </property>
+        <property name="gridStyle">
+         <enum>Qt::DotLine</enum>
+        </property>
+        <property name="wordWrap">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QWidget" name="widFind" native="true">
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="pixmap">
+            <pixmap resource="resources.qrc">:/find.png</pixmap>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="leFind"/>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QToolButton" name="tbScroll">
+          <property name="toolTip">
+           <string>Find untranslated</string>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="resources.qrc">
+            <normaloff>:/ArrDown.png</normaloff>:/ArrDown.png</iconset>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="tbImages">
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="resources.qrc">
+            <normaloff>:/picture.png</normaloff>:/picture.png</iconset>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="tbBookmark">
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="resources.qrc">
+            <normaloff>:/bookmark.png</normaloff>:/bookmark.png</iconset>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="tbRec">
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="resources.qrc">
+            <normaloff>:/clipboard.png</normaloff>:/clipboard.png</iconset>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QLabel" name="labUuid">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="labInfo">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QProgressBar" name="progress">
+          <property name="value">
+           <number>0</number>
+          </property>
+          <property name="format">
+           <string>%v / %m</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+  <action name="actOpen">
+   <property name="text">
+    <string>&amp;Open...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actNewProj">
+   <property name="text">
+    <string>&amp;New</string>
+   </property>
+  </action>
+  <action name="actNewPage">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/newpage.png</normaloff>:/newpage.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;New page</string>
+   </property>
+  </action>
+  <action name="actOpenSrc">
+   <property name="text">
+    <string>&amp;Open source...</string>
+   </property>
+  </action>
+  <action name="actSaveAs">
+   <property name="text">
+    <string>Save &amp;as...</string>
+   </property>
+   <property name="toolTip">
+    <string>Save as</string>
+   </property>
+  </action>
+  <action name="actDelRows">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/delete.png</normaloff>:/delete.png</iconset>
+   </property>
+   <property name="text">
+    <string>Delete rows</string>
+   </property>
+  </action>
+  <action name="actSave">
+   <property name="text">
+    <string>&amp;Save</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actDelPage">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/delete.png</normaloff>:/delete.png</iconset>
+   </property>
+   <property name="text">
+    <string>Delete</string>
+   </property>
+  </action>
+  <action name="actNewDir">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/folder.png</normaloff>:/folder.png</iconset>
+   </property>
+   <property name="text">
+    <string>New dir</string>
+   </property>
+  </action>
+  <action name="actSplit">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/split.png</normaloff>:/split.png</iconset>
+   </property>
+   <property name="text">
+    <string>Split</string>
+   </property>
+  </action>
+  <action name="actSaveSrc">
+   <property name="text">
+    <string>&amp;Save source</string>
+   </property>
+  </action>
+  <action name="actSort">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/sort.png</normaloff>:/sort.png</iconset>
+   </property>
+   <property name="text">
+    <string>Sort</string>
+   </property>
+  </action>
+  <action name="actGrabCbrd">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Grab clipboard</string>
+   </property>
+  </action>
+  <action name="actInsertSrc">
+   <property name="text">
+    <string>&amp;Insert source...</string>
+   </property>
+  </action>
+  <action name="actFindUntrn">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/find.png</normaloff>:/find.png</iconset>
+   </property>
+   <property name="text">
+    <string>Find untranslated</string>
+   </property>
+  </action>
+  <action name="actMerge">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/merge.png</normaloff>:/merge.png</iconset>
+   </property>
+   <property name="text">
+    <string>Merge</string>
+   </property>
+  </action>
+  <action name="actClearTrn">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/clear.png</normaloff>:/clear.png</iconset>
+   </property>
+   <property name="text">
+    <string>Clear translation</string>
+   </property>
+  </action>
+  <action name="actMergePage">
+   <property name="text">
+    <string>&amp;Merge</string>
+   </property>
+  </action>
+  <action name="actIcon">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icon.png</normaloff>:/icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Set icon</string>
+   </property>
+  </action>
+  <action name="actSplitLine">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/split.png</normaloff>:/split.png</iconset>
+   </property>
+   <property name="text">
+    <string>Split line</string>
+   </property>
+  </action>
+  <action name="actSplitName">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/talk.png</normaloff>:/talk.png</iconset>
+   </property>
+   <property name="text">
+    <string>Split name</string>
+   </property>
+  </action>
+  <action name="actAddBookmark">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/bookmark.png</normaloff>:/bookmark.png</iconset>
+   </property>
+   <property name="text">
+    <string>Edit bookmark</string>
+   </property>
+  </action>
+  <action name="actRmBookmark">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/delete.png</normaloff>:/delete.png</iconset>
+   </property>
+   <property name="text">
+    <string>Remove bookmark</string>
+   </property>
+  </action>
+  <action name="actJoinLine">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/merge.png</normaloff>:/merge.png</iconset>
+   </property>
+   <property name="text">
+    <string>Join next line</string>
+   </property>
+  </action>
+  <action name="actSaveBranch">
+   <property name="text">
+    <string>Save branch</string>
+   </property>
+  </action>
+  <action name="actionList">
+   <property name="text">
+    <string>List</string>
+   </property>
+  </action>
+  <action name="actBookmarks">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/bookmark.png</normaloff>:/bookmark.png</iconset>
+   </property>
+   <property name="text">
+    <string>Bookmarks</string>
+   </property>
+  </action>
+  <action name="actImages">
+   <property name="text">
+    <string>Images...</string>
+   </property>
+  </action>
+  <action name="actPicture">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/picture.png</normaloff>:/picture.png</iconset>
+   </property>
+   <property name="text">
+    <string>Set picture</string>
+   </property>
+  </action>
+  <action name="actDelPicture">
+   <property name="text">
+    <string>Remove picture</string>
+   </property>
+  </action>
+  <action name="actSetImgDir">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/folder.png</normaloff>:/folder.png</iconset>
+   </property>
+   <property name="text">
+    <string>Set Images Dir</string>
+   </property>
+  </action>
+  <action name="actRmImgDir">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/delete.png</normaloff>:/delete.png</iconset>
+   </property>
+   <property name="text">
+    <string>Remove Images Dir</string>
+   </property>
+  </action>
+  <action name="actPlayerFont">
+   <property name="text">
+    <string>Player font...</string>
+   </property>
+  </action>
+  <action name="actInsertBG">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/picture.png</normaloff>:/picture.png</iconset>
+   </property>
+   <property name="text">
+    <string>Insert pic...</string>
+   </property>
+  </action>
+  <action name="actNameRepeat">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Name repeating</string>
+   </property>
+  </action>
+ </widget>
+ <tabstops>
+  <tabstop>tree</tabstop>
+  <tabstop>srcname</tabstop>
+  <tabstop>srcline</tabstop>
+  <tabstop>trnname</tabstop>
+  <tabstop>trnline</tabstop>
+  <tabstop>table</tabstop>
+  <tabstop>leFind</tabstop>
+  <tabstop>tbScroll</tabstop>
+  <tabstop>tbImages</tabstop>
+  <tabstop>tbBookmark</tabstop>
+  <tabstop>tbRec</tabstop>
+ </tabstops>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

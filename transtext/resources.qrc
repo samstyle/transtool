@@ -1,0 +1,23 @@
+<RCC>
+    <qresource prefix="/">
+        <file>folder.png</file>
+        <file>delete.png</file>
+        <file>sort.png</file>
+        <file>find.png</file>
+        <file>merge.png</file>
+        <file>split.png</file>
+        <file>newpage.png</file>
+        <file>Japan.png</file>
+        <file>Translate.png</file>
+        <file>replace.png</file>
+        <file>clear.png</file>
+        <file>icon.png</file>
+        <file>add.png</file>
+        <file>ArrDown.png</file>
+        <file>Paperclip.png</file>
+        <file>talk.png</file>
+        <file>bookmark.png</file>
+        <file>picture.png</file>
+        <file>clipboard.png</file>
+    </qresource>
+</RCC>
