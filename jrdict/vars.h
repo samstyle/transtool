@@ -50,6 +50,7 @@ void loadDict();
 void saveDict();
 void loadKanji(QString, int = 0);
 void loadForms();
+void reloadAll();
 
 formfind katatohira(formfind);
 bool wrdCompare(dWord, dWord);

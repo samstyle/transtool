@@ -3,9 +3,9 @@
 #include "vars.h"
 #include "classes.h"
 
+extern QString basedir;
 QList<dictfind> findres;
 extern QMap<QString, kanjitem> kanji;
-
 extern dNode dict;
 
 DWindow::DWindow(QWidget *parent):QWidget(parent) {
@@ -92,10 +92,7 @@ void DWindow::waneword() {
 }
 
 void DWindow::reload() {
-	loadDict();
-	loadForms();
-	loadKanji("kana.jrk", 1);
-	loadKanji("kanji.jrk");
+	reloadAll();
 	gotranslate();
 }
 
@@ -216,5 +213,5 @@ void xTranslator::goTranslate(QString string, MTableModel* model) {
 	}
 	emit translationReady(model);
 //	model->update();
-	qDebug() << ">" <<__FUNCTION__;
+//	qDebug() << ">" <<__FUNCTION__;
 }

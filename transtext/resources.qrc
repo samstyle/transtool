@@ -19,5 +19,8 @@
         <file>bookmark.png</file>
         <file>picture.png</file>
         <file>clipboard.png</file>
+        <file>deleteline.png</file>
+        <file>insertabove.png</file>
+        <file>insertbelow.png</file>
     </qresource>
 </RCC>

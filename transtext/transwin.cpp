@@ -82,6 +82,11 @@ TWindow::TWindow() {
 	connect(ui.table->selectionModel(),SIGNAL(selectionChanged(QItemSelection,QItemSelection)),this,SLOT(changeRow(QItemSelection)));
 	connect(ui.table, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(play()));
 
+	connect(ui.tbInsertAbove, &QToolButton::released, this, &TWindow::rowInsertAbove);
+	connect(ui.tbInsertBelow, &QToolButton::released, this, &TWindow::rowInsertBelow);
+	connect(ui.tbDeleteLine, &QToolButton::released, this, &TWindow::rowDelete);
+	connect(ui.tbMergeNext, &QToolButton::released, this, &TWindow::joinLine);
+
 	treeMenu = new QMenu();
 	treeMenu->addAction(ui.actNewDir);
 	treeMenu->addAction(ui.actNewPage);
@@ -892,6 +897,9 @@ void TWindow::rowInsert(bool before) {
 	changed = 1;
 }
 
+void TWindow::rowInsertAbove() {rowInsert(true);}
+void TWindow::rowInsertBelow() {rowInsert(false);}
+
 void TWindow::joinLine() {
 	if (!curPage) return;
 	if (curRow < 0) return;
@@ -1029,7 +1037,7 @@ void TWindow::changeRow(QItemSelection) {
 				emit textChanged(text.remove(" "));
 				// clip->setText(text.remove(" "));
 			}
-			ui.labInfo->setText(QString("%0 / %1").arg(curRow).arg(curPage->text.size()));
+			ui.labInfo->setText(QString("%0 / %1").arg(curRow+1).arg(curPage->text.size()));
 		} else {
 			setEdit(false);
 			ui.labInfo->clear();
@@ -1833,7 +1841,7 @@ void TWindow::insertImgText(QString rpath) {
 	int pos = rpath.lastIndexOf(".");
 	if (pos > 0) rpath = rpath.left(pos);
 	lin.type = TL_TEXT;
-	lin.src.text = QString("[BG:%0]").arg(rpath);
+	lin.src.text = QString("[%0]").arg(rpath);
 	curPage->text.insert(curRow, lin);
 	model->insertRow(curRow);
 	setProgress();
@@ -1881,19 +1889,22 @@ void xFileTreeWidget::itemClick(const QModelIndex& idx, const QModelIndex&) {
 
 void xFileTreeWidget::itemChosed(const QModelIndex& idx) {
 	QFileInfo inf = model->fileInfo(idx);
-	QString relpath = model->rootDirectory().relativeFilePath(inf.filePath());
+	// QString relpath = model->rootDirectory().relativeFilePath(inf.filePath());
+	QString relpath = inf.fileName();
 	emit s_selected(relpath);
-//	close();
+	close();
 }
 
 // cbrd
 
 void TWindow::cbrdChanged() {
+	if (clip->property("busy").toInt()) return;
 	if (!ui.tbRec->isChecked()) return;
 	if (!curPage) return;
 	if (!clip->mimeData()->hasText()) return;
 	QString txt = clip->text();
 	if (txt.isEmpty()) return;
+	clip->setProperty("busy", 1);
 	clip->clear();
 	TLine lin;
 	int posa = txt.indexOf("「");
@@ -1921,6 +1932,7 @@ void TWindow::cbrdChanged() {
 	model->insertRow(curPage->text.size() - 1);
 	ui.table->scrollToBottom();
 	setProgress();
+	clip->setProperty("busy", 0);
 }
 
 // player

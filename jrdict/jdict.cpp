@@ -238,6 +238,7 @@ void loadKanji(QString fname, int clr) {
 	QString ch;
 	kanjitem itm;
 	if (clr) kanji.clear();
+	int cnt = kanji.size();
 	if (file.open(QFile::ReadOnly)) {
 		while(!file.atEnd()) {
 			list = QDialog::trUtf8(file.readLine()).remove(QRegExp("[\r\n]")).split("\t", Qt::SkipEmptyParts);
@@ -252,7 +253,7 @@ void loadKanji(QString fname, int clr) {
 				kanji[ch] = itm;
 			}
 		}
-		qDebug() << "Kanji total\t"<<kanji.size();
+		qDebug() << fname << "loaded :" << kanji.size() - cnt << "entries, total " << kanji.size();
 		file.close();
 	} else {
 		qDebug() << "Can't open Kanji file" << kanjpath;
@@ -305,13 +306,22 @@ void loadDict() {
 	qDebug() << "Words total\t"<< count;
 }
 
+void reloadAll() {
+	loadDict();
+	loadForms();
+	QDir dir(basedir);
+	QStringList lst = dir.entryList(QStringList() << "*.jrk", QDir::Files);
+	int f = 1;
+	foreach(QString path, lst) {
+		loadKanji(path, f);
+		f = 0;
+	}
+}
+
 void DictMain() {
 	basedir = QDir::homePath().append("/.config/samstyle/jrdict/");
 	formpath = basedir + "forms4.jrf";
 	dictpath = basedir + "dict.dic";
 
-	loadForms();
-	loadDict();
-	loadKanji("kana.jrk", 1);
-	loadKanji("kanji.jrk");
+	reloadAll();
 }

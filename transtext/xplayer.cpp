@@ -63,21 +63,26 @@ bool xPlayer::playLine(TPage* pg, int ln) { // TLine _l) {
 			cnt--;
 		}
 	} else {
-		QRect rct(0, height()-200, width(), 200);
-		QRect nrc(0, height()-240, 300, 38);
+		QRect rct(5, height()-195, width()-10, 190);
+		QRect nrc(5, height()-235, 300, 80);
 		QLinearGradient grd(rct.topLeft(),rct.bottomLeft());
+		QPainterPath pth;
+		pth.setFillRule(Qt::WindingFill);
+		pth.addRoundedRect(rct, 10, 10);
 		grd.setColorAt(0, QColor(0,0,0,200));
 		grd.setColorAt(1, QColor(0,0,0,120));
-		pnt.fillRect(rct, grd);
-		pnt.drawText(rct.adjusted(20,10,-20,-10), flag, txt);
 		if (!lin.src.name.isEmpty()) {
-			pnt.fillRect(nrc, QBrush(QColor(1,1,1,200)));
+			pth.addRoundedRect(nrc, 10, 10);
+			pnt.fillPath(pth, grd);
 			if (lin.trn.name.isEmpty()) {
 				pnt.drawText(nrc.adjusted(5,2,2,5),0,lin.src.name);
 			} else {
 				pnt.drawText(nrc.adjusted(5,2,2,5),0,lin.trn.name);
 			}
+		} else {
+			pnt.fillPath(pth, grd);
 		}
+		pnt.drawText(rct.adjusted(20,10,-20,-10), flag, txt);
 	}
 	pnt.end();
 

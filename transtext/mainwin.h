@@ -201,6 +201,8 @@ class TWindow : public QWidget {
 
 		void rowDelete();
 		void rowInsert(bool);
+		void rowInsertAbove();
+		void rowInsertBelow();
 		void pageSplit();
 
 		void changeIcon();
