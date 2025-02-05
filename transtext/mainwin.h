@@ -75,6 +75,7 @@ class xPlayer : public QLabel {
 	signals:
 		void clicked();
 		void clicked_r();
+		void closed();
 	private:
 		int cnt;
 		int moved;
@@ -90,6 +91,7 @@ class xPlayer : public QLabel {
 		void mouseMoveEvent(QMouseEvent*);
 		void wheelEvent(QWheelEvent*);
 		void keyPressEvent(QKeyEvent*);
+		void closeEvent(QCloseEvent*);
 	private slots:
 		void frameChanged();
 };

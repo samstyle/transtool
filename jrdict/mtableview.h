@@ -30,6 +30,22 @@ class MTableModel : public QAbstractTableModel {
 				return QVariant();
 			}
 		}
+		QVariant headerData(int sect, Qt::Orientation ornt, int role) const {
+			QVariant res;
+			if (role != Qt::DisplayRole) return res;
+			if (ornt == Qt::Vertical) return res;
+			if (ornt == Qt::Horizontal) {
+				switch(sect) {
+					case 0: res = "Text"; break;
+					case 1: res = "Word"; break;
+					case 2: res = "Reading"; break;
+					case 3: res = "Type"; break;
+					case 4: res = "Translation"; break;
+					case 5: res = "Comment"; break;
+				}
+			}
+			return res;
+		}
 		void clear() {
 			matrix.clear();
 		}

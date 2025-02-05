@@ -55,7 +55,7 @@ TWindow::TWindow() {
 
 	connect(ui.actNewProj,SIGNAL(triggered()),this,SLOT(newPrj()));
 	connect(ui.actOpen,SIGNAL(triggered()),this,SLOT(openPrj()));
-	connect(ui.actMergePage,SIGNAL(triggered()),this,SLOT(mergePrj()));
+	connect(ui.actMerge,SIGNAL(triggered()),this,SLOT(mergePrj()));
 	connect(ui.actSave,SIGNAL(triggered()),this,SLOT(saveIt()));
 	connect(ui.actSaveAs,SIGNAL(triggered()),this,SLOT(savePrj()));
 
@@ -99,7 +99,7 @@ TWindow::TWindow() {
 	treeMenu->addAction(ui.actSetImgDir);
 	treeMenu->addAction(ui.actRmImgDir); ui.actRmImgDir->setVisible(false);
 	treeMenu->addSeparator();
-	treeMenu->addAction(ui.actMerge);
+	treeMenu->addAction(ui.actMergePage);
 	treeMenu->addSeparator();
 	treeMenu->addAction(ui.actDelPage);
 
@@ -108,7 +108,7 @@ TWindow::TWindow() {
 	connect(ui.actSaveBranch,SIGNAL(triggered()),this,SLOT(saveBranch()));
 	connect(ui.actDelPage,SIGNAL(triggered()),this,SLOT(delPage()));
 	connect(ui.actSort,SIGNAL(triggered()),this,SLOT(sortTree()));
-	connect(ui.actMerge, SIGNAL(triggered()), this, SLOT(mergePages()));
+	connect(ui.actMergePage, SIGNAL(triggered()), this, SLOT(mergePages()));
 	connect(ui.actIcon, SIGNAL(triggered()), this, SLOT(changeIcon()));
 	connect(ui.actSetImgDir,SIGNAL(triggered()),this,SLOT(setImgDir()));
 	connect(ui.actRmImgDir,SIGNAL(triggered()),this,SLOT(rmImgDir()));
@@ -169,6 +169,7 @@ TWindow::TWindow() {
 	player->fnt.fromString(opt.value("player/font").toString());
 	connect(player, SIGNAL(clicked()), this, SLOT(playNext()));
 	connect(player, SIGNAL(clicked_r()), this, SLOT(playPrev()));
+	connect(player, SIGNAL(closed()), this, SLOT(changeRow(QItemSelection)));
 
 	rpl = new Replacer(this);
 	QObject::connect(this, &TWindow::rqReplace, rpl, &Replacer::show);
@@ -1033,9 +1034,8 @@ void TWindow::changeRow(QItemSelection) {
 			if (!ui.srcname->text().isEmpty()) {
 				text.prepend("「").prepend(ui.srcname->text()).append("」");
 			}
-			if (!ui.actGrabCbrd->isChecked() && !ui.tbRec->isChecked()) {
+			if (!ui.actGrabCbrd->isChecked() && !ui.tbRec->isChecked() && !player->isVisible()) {
 				emit textChanged(text.remove(" "));
-				// clip->setText(text.remove(" "));
 			}
 			ui.labInfo->setText(QString("%0 / %1").arg(curRow+1).arg(curPage->text.size()));
 		} else {
@@ -1409,7 +1409,9 @@ void TWindow::mergePrj(QString path) {
 	if (path == "") return;
 	opt.setValue("lastdir",QFileInfo(path).dir().absolutePath());
 #if NEW_LOADER
-	trb.load(path, getCurrentParent());
+	QTreeWidgetItem* root = getCurrentParent();
+	root = addItem(root, QFileInfo(path).fileName(), 0);
+	trb.load(path, root);
 	changed = 1;
 #else
 	QByteArray data = loadPrjData(path);
@@ -1755,6 +1757,8 @@ QTreeWidgetItem* TWindow::getCurrentParent() {
 		id = QUuid(par->data(0, roleId).toByteArray());
 		if (!id.isNull())
 			par = par->parent();
+	} else {
+		par = ui.tree->invisibleRootItem();
 	}
 	return par;
 }
@@ -1776,7 +1780,6 @@ TPage* TWindow::newPage() {
 
 QTreeWidgetItem* TWindow::addItem(QTreeWidgetItem* par, QString nam, QUuid id, QUuid iconid) {
 	TPage* page;
-	QString tip;
 	QIcon ico;
 	QTreeWidgetItem* itm = new QTreeWidgetItem();
 	itm->setData(0, roleId, id.toByteArray());

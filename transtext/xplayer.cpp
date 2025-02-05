@@ -13,6 +13,10 @@ xPlayer::xPlayer(QWidget* p):QLabel(p) {
 	connect(mov, SIGNAL(frameChanged(int)),this,SLOT(frameChanged()));
 }
 
+void xPlayer::closeEvent(QCloseEvent*) {
+	emit closed();
+}
+
 void xPlayer::reset() {
 	curimgpath.clear();
 }
