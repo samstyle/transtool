@@ -98,10 +98,11 @@ struct TLine {
 	int type = TL_TEXT;
 	int flag = 0;
 	QUuid bmrkId;
-//	QUuid picId;
 	QString imgpath;
+	QStringList ovlpath;
 	TPhrase src;
 	TPhrase trn;
+	QMap<QString,QVariant> par;
 };
 
 struct TIcon {
@@ -132,6 +133,10 @@ struct TBookmark {
 	QString name;
 	QString descr;
 };
+
+int fgeti(QFile&);
+int fgetw(QFile&);
+int fgetb(QFile&);
 
 void prjInit();
 
@@ -165,3 +170,4 @@ void normLine(TLine&);
 
 void normLine(TLine&);
 int getLineStatus(TLine);
+void fillFlags(TPage*);

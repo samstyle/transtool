@@ -38,6 +38,7 @@ void FormWin::saveforms() {
 void FormWin::goforms() {
 	QFile file(formpath);
 	file.open(QFile::ReadOnly);
-	editor->setText(QDialog::trUtf8(file.readAll())); file.close();
+	editor->setText(file.readAll());
+	file.close();
 	show();
 }

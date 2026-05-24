@@ -40,7 +40,7 @@ void WordWin::saveword() {
 	} else {
 		updWord(eword, neword);
 	}
-	saveDict();
+	saveDicts();
 	hide();
 	emit wantranslate();
 }

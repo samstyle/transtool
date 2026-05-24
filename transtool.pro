@@ -48,5 +48,6 @@ SOURCES += main.cpp \
            transtext/transtext.cpp \
            transtext/transwin.cpp \
            transtext/trb.cpp \
-           transtext/xplayer.cpp
+           transtext/xplayer.cpp \
+           transtext/ybn.cpp
 RESOURCES += jrdict/dict4.qrc transtext/resources.qrc

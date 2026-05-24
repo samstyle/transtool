@@ -72,7 +72,7 @@ void DWindow::delword() {
 	int row = ui.result->currentIndex().row();
 	if (row < 0) return;
 	delWord(findres[row].word);
-	saveDict();
+	saveDicts();
 	gotranslate();
 }
 

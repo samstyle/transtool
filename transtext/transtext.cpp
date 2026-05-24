@@ -12,6 +12,28 @@ QList<TPage> getBook() {
 	return book;
 }
 
+int fgeti(QFile& file) {
+	char c;
+	file.getChar(&c); int r = c & 0xff;
+	file.getChar(&c); r |= (c & 0xff) << 8;
+	file.getChar(&c); r |= (c & 0xff) << 16;
+	file.getChar(&c); r |= (c & 0xff) << 24;
+	return r;
+}
+
+int fgetw(QFile& file) {
+	char c;
+	file.getChar(&c); int r = c & 0xff;
+	file.getChar(&c); r |= (c & 0xff) << 8;
+	return r & 0xffff;
+}
+
+int fgetb(QFile& file) {
+	char c;
+	file.getChar(&c);
+	return c & 0xff;
+}
+
 void prjInit() {
 	book.clear();
 	icons.clear();
@@ -385,7 +407,7 @@ TPage loadPage(QString fnam, int type) {
 
 int getLineStatus(TLine line) {
 	int res = LS_NONE;
-	if (line.type == TL_TEXT) {
+	if ((line.type == TL_TEXT) || (line.type == TL_SELECT)) {
 		if (!(line.src.text.startsWith("[") ||
 			(line.src.text.startsWith("==")) ||
 			(line.src.text.isEmpty() && line.src.name.isEmpty()))) {
@@ -400,7 +422,8 @@ int getLineStatus(TLine line) {
 void getCounts(TPage* page,int& trans, int& total) {
 	trans = 0;
 	total = 0;
-	foreach(TLine line, page->text) {
+	TLine line;
+	foreach(line, page->text) {
 		switch(getLineStatus(line)) {
 			case LS_TRN:
 				trans++;

@@ -5,19 +5,6 @@
 
 #include "base.h"
 
-int get4(QFile& file) {
-	char ch;
-	file.getChar(&ch);
-	int res = ch & 0xff;
-	file.getChar(&ch);
-	res |= (ch << 8);
-	file.getChar(&ch);
-	res |= (ch << 16);
-	file.getChar(&ch);
-	res |= (ch << 24);
-	return res;
-}
-
 TPage loadSNX(QString fname, int) {
 	TPage page;
 	QFile file(fname);
@@ -26,8 +13,8 @@ TPage loadSNX(QString fname, int) {
 	line.type = TL_TEXT;
 	QTextCodec* codec = QTextCodec::codecForName("Shift-JIS");
 
-	int count = get4(file);
-	int p1 = get4(file);
+	int count = fgeti(file);
+	int p1 = fgeti(file);
 	int p2,p3;
 	int len;
 
@@ -42,13 +29,13 @@ TPage loadSNX(QString fname, int) {
 //	if (dump) printf("; bytecode\n\n");
 
 	while (count > 0) {
-		p1 = get4(file);
-		p2 = get4(file);
-		p3 = get4(file);
+		p1 = fgeti(file);
+		p2 = fgeti(file);
+		p3 = fgeti(file);
 		if ((p1 == 0x11) && (p2 == 0x02)) {
 			curPos = file.pos();
 			file.seek(dataPos + p3);
-			len = get4(file);
+			len = fgeti(file);
 			file.read(buf,len);
 			file.seek(curPos);
 			sptr = buf;

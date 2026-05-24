@@ -87,6 +87,10 @@ TWindow::TWindow() {
 	connect(ui.tbDeleteLine, &QToolButton::released, this, &TWindow::rowDelete);
 	connect(ui.tbMergeNext, &QToolButton::released, this, &TWindow::joinLine);
 
+	connect(ui.tbNewDir, &QToolButton::released, ui.actNewDir, &QAction::trigger);
+	connect(ui.tbNewPage, &QToolButton::released, ui.actNewPage, &QAction::trigger);
+	connect(ui.tbDelete, &QToolButton::released, ui.actDelPage, &QAction::trigger);
+
 	treeMenu = new QMenu();
 	treeMenu->addAction(ui.actNewDir);
 	treeMenu->addAction(ui.actNewPage);
@@ -169,6 +173,7 @@ TWindow::TWindow() {
 	player->fnt.fromString(opt.value("player/font").toString());
 	connect(player, SIGNAL(clicked()), this, SLOT(playNext()));
 	connect(player, SIGNAL(clicked_r()), this, SLOT(playPrev()));
+	connect(player, SIGNAL(selected(QString)), this, SLOT(jmpToLabel(QString)));
 	connect(player, SIGNAL(closed()), this, SLOT(changeRow(QItemSelection)));
 
 	rpl = new Replacer(this);
@@ -1676,16 +1681,20 @@ void TWindow::saveSrc() {
 	}
 }
 
-QList<TPage> openFiles(QFileDialog::FileMode mode) {
+typedef TPage(*cbloader)(QString, int);
+
+QList<TPage> TWindow::openFiles(QFileDialog::FileMode mode) {
 	QList<TPage> res;
 	QFileDialog qfd;
 	QStringList filters;
 	qfd.setOption(QFileDialog::DontUseNativeDialog, true);
+	qfd.setDirectory(opt.value("lastdir", "").toString());
 	filters << "Text files (*)"
 		<< "EAGLS script(*.txt)"
 		<< "KS files (*.ks)"
 		<< "KS files UCS2 (*.ks)"
 		<< "KS files UTF8 (*.ks)"
+		<< "YU-RIS files SJIS xored (*.ybn)"
 		<< "Abelsoft script ADV (*.adv)"
 		<< "Enmon script ENM (*.enm)"
 		<< "SNX engine (*.snx)";
@@ -1700,12 +1709,13 @@ QList<TPage> openFiles(QFileDialog::FileMode mode) {
 	int cpage = CP_SJIS;
 	if (path.contains("UCS2")) cpage = CP_UCS2;
 	if (path.contains("UTF8")) cpage = CP_UTF8;
-	TPage(*callback)(QString,int) = nullptr;
+	cbloader callback = nullptr;
 	if (path.contains("Abelsoft")) callback = &loadAbelsoft;
 	if (path.contains("Enmon")) callback = &loadEnmon;
 	if (path.contains("KS files")) callback = &loadKS;
 	if (path.contains("EAGLS")) callback = &loadEAGLS;
 	if (path.contains("SNX")) callback = &loadSNX;
+	if (path.contains("YU-RIS")) callback = &loadYBN;
 	foreach(path, paths) {
 		if (callback) {
 			page = callback(path, cpage);
@@ -1949,45 +1959,101 @@ QStringList fExistsR(QString imgdir, QString str) {
 	flt << str + ".bmp";
 	flt << str + ".gif";
 	QDirIterator it(imgdir, flt, QDir::NoFilter, QDirIterator::Subdirectories);
+	if (!it.hasNext()) {
+		lst.clear();
+		foreach(str, flt) lst << str.toUpper();
+		QDirIterator it(imgdir, lst, QDir::NoFilter, QDirIterator::Subdirectories);
+		if (!it.hasNext()) {
+			lst.clear();
+			foreach(str, flt) lst << str.toLower();
+			QDirIterator it(imgdir, lst, QDir::NoFilter, QDirIterator::Subdirectories);
+		}
+	}
+	lst.clear();
 	while (it.hasNext()) {
 		lst << it.next();
 	}
 	return lst;
 }
 
+// TODO: fill TLine::ovlpath list (chars, sub-images etc)
+// [CH:img],[CH:]
 void fillImages(TPage* pg, QString imgdir) {
 	if (pg == nullptr) return;
 	QString img;
 	int cnt = pg->text.size();
 	int i;
+	TLine* lin;
 	QString txt;
+	QString chstr;
 	QStringList ximglist;
+	QStringList chlist;
+	QString imgpath;
+	QStringList ovlpath;
+	bool isbg;
 	for (i = 0; i < cnt; i++) {
-		txt = pg->text[i].src.text;
+		lin = &pg->text[i];
+		txt = lin->src.text;
 		txt.remove(" ");
 		if (imgdir.isEmpty()) {
-			pg->text[i].imgpath.clear();
-		} else if (txt.startsWith("[") && !(pg->text[i].flag & TF_SELECT)) {
+			imgpath.clear();
+			ovlpath.clear();
+		} else if (txt.startsWith("[") && !(lin->flag & TF_SELECT)) {
+			isbg = true;
 			if (txt.startsWith("[BG:")) {
 				img = txt.mid(4);
 			} else if (txt.startsWith("[BGX:") || (txt.startsWith("[MOV:"))) {
 				img = txt.mid(5);
 			} else if (txt.startsWith("[BigBG:")) {
 				img = txt.mid(7);
+			} else if (txt.startsWith("[CH:")) {
+				isbg = false;
+				chstr = txt.mid(4);
+				chstr.remove("]");
+				chlist = chstr.split(",",Qt::KeepEmptyParts);
+				ovlpath.clear();
+				foreach(chstr, chlist) {
+					ximglist = fExistsR(imgdir, chstr);
+					ovlpath.append(fExistsR(imgdir, chstr));
+				}
 			} else {
 				img = txt.mid(1);
 			}
-			img.remove("]");
-			ximglist = fExistsR(imgdir, img);
-			if (!ximglist.isEmpty()) {
-				img = ximglist.first();
-			} else {
-				img.clear();
+			if (isbg) {
+				img.remove("]");
+				ximglist = fExistsR(imgdir, img);
+				if (!ximglist.isEmpty()) {
+					imgpath = ximglist.first();
+				} else {
+					imgpath.clear();
+				}
 			}
-			pg->text[i].imgpath = img;
-		} else {
-			pg->text[i].imgpath = img;
 		}
+		lin->imgpath = imgpath;
+		lin->ovlpath = ovlpath;
+	}
+}
+
+void fillFlags(TPage* pg) {
+	TLine* lp;
+	int i = 0;
+	int issel = 0;
+	while (i < pg->text.size()) {
+		lp = &pg->text[i];
+		if (lp->src.text.toLower() == "[select]") {
+			issel = 1;
+			lp->flag |= TF_SELECT;
+		} else if (issel) {
+			if (lp->src.text.isEmpty() || lp->src.text.startsWith("=") || lp->src.text.startsWith("[")) {
+				issel = 0;
+				lp->flag &= ~(TF_SELECT & TF_SELITEM);
+			} else {
+				lp->flag |= TF_SELITEM;
+			}
+		} else {
+			lp->flag = 0;
+		}
+		i++;
 	}
 }
 
@@ -2024,6 +2090,7 @@ void TWindow::play() {
 	player->setWindowTitle(nam);
 	imgdir = getImgDir(curItem);
 	fillImages(curPage, imgdir);
+	fillFlags(curPage);
 	player->reset();
 	player->playLine(curPage, curRow); // curPage->text[curRow]);
 	player->show();
@@ -2045,6 +2112,12 @@ void TWindow::playPrev() {
 		lin = curPage->text[curRow];
 	} while ((curRow > 0) && (lin.src.text.isEmpty() || (lin.src.text.startsWith("[") && !(lin.flag & TF_SELECT)) || (lin.flag & TF_SELITEM)));
 	player->playLine(curPage, curRow); // lin);
+}
+
+void TWindow::jmpToLabel(QString lab) {
+	findStr("== $"+lab);
+	findStr("== "+lab);
+	playNext();
 }
 
 void TWindow::fontSelect() {

@@ -9,5 +9,6 @@ TPage loadEnmon(QString, int=CP_SJIS);
 TPage loadAbelsoft(QString, int=CP_SJIS);
 TPage loadEAGLS(QString, int=CP_SJIS);
 TPage loadSRP(QString, int=CP_SJIS);
+TPage loadYBN(QString, int=CP_SJIS);
 
 #endif // FILETYPES_H

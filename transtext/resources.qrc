@@ -22,5 +22,6 @@
         <file>deleteline.png</file>
         <file>insertabove.png</file>
         <file>insertbelow.png</file>
+        <file>folder-new.png</file>
     </qresource>
 </RCC>

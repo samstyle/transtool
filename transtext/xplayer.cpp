@@ -28,6 +28,9 @@ bool xPlayer::playLine(TPage* pg, int ln) { // TLine _l) {
 	QPainter pnt;
 	// text overlay
 	QString txt;
+	QString path;
+	QImage img;
+	int px,py;
 	int flag = Qt::TextWordWrap;
 	if (lin.trn.text.isEmpty()) {
 		txt = lin.src.text;
@@ -38,8 +41,19 @@ bool xPlayer::playLine(TPage* pg, int ln) { // TLine _l) {
 	ovr = QPixmap(size());
 	ovr.fill(Qt::transparent);
 	pnt.begin(&ovr);
+	foreach(path, lin.ovlpath) {
+		img.load(path);
+		px = (width() - img.width()) / 2;	// center
+		py = height() - img.height();		// bottom
+		if (px < 0) px = 0;
+		if (py < 0) py = 0;
+		pnt.drawImage(px, py, img);
+	}
 	pnt.setFont(fnt);
 	pnt.setPen(Qt::white);
+	selabs.clear();
+	zones.clear();
+	curzone = -1;
 	if (lin.flag & TF_SELECT) {
 		int _ln = ln;
 		QStringList variants;
@@ -53,6 +67,7 @@ bool xPlayer::playLine(TPage* pg, int ln) { // TLine _l) {
 				} else {
 					variants.append(slin.trn.text);
 				}
+				selabs.append(slin.src.name);
 			}
 		} while (slin.flag & TF_SELITEM);
 		int cnt = variants.size();
@@ -60,8 +75,11 @@ bool xPlayer::playLine(TPage* pg, int ln) { // TLine _l) {
 		int xs = width() >> 2;
 		int w = width() >> 1;
 		int h = 45;
+		QRect rct;
 		while (cnt > 0) {
-			pnt.fillRect(xs, ys, w, h, QColor(0, 0, 0, 200));
+			rct.setRect(xs, ys, w, h);
+			zones.append(rct);
+			pnt.fillRect(rct, QColor(0, 0, 0, 200));
 			pnt.drawText(xs+2, ys+2, w-4, h-4, Qt::AlignHCenter | Qt::AlignVCenter, variants.takeFirst());
 			ys += (h + 5);
 			cnt--;
@@ -134,14 +152,37 @@ void xPlayer::frameChanged() {
 	setPixmap(pxm);
 }
 
+void xPlayer::mousePressEvent(QMouseEvent *ev) {
+	if (moved) return;
+	if (ev->button() == Qt::LeftButton) {
+		if (zones.size() == 0) {
+			emit clicked();
+		} else if (curzone >= 0) {
+			if (!selabs.at(curzone).isEmpty()) {
+				emit selected(selabs.at(curzone));
+			}
+		}
+	}
+}
+
 void xPlayer::mouseReleaseEvent(QMouseEvent *ev) {
 	if (ev->button() == Qt::LeftButton) {
 		if (moved) {
 			moved = 0;
-		} else {
-			emit clicked();
 		}
 	}
+}
+
+int xPlayer::getZone(QPoint pt) {
+	int idx = 0;
+	int zone = -1;
+	foreach(QRect rct, zones) {
+		if (rct.contains(pt)) {
+			zone = idx;
+		}
+		idx++;
+	}
+	return zone;
 }
 
 void xPlayer::mouseMoveEvent(QMouseEvent* ev) {
@@ -157,13 +198,33 @@ void xPlayer::mouseMoveEvent(QMouseEvent* ev) {
 			picpos = newpos;
 			frameChanged();
 		}
+	} else {
+		// check cursor above one of QRect in zones
+		QRect rct;
+		int newcurzone = getZone(ev->pos());
+		if (newcurzone != curzone) {
+			QPainter pnt(&ovr);
+			if (curzone >= 0) {
+				rct = zones.at(curzone);
+				pnt.fillRect(rct.left() - 5, rct.top(), 5, rct.height(), qRgba(0,0,0,255));
+			}
+			curzone = newcurzone;
+			if (curzone >= 0) {
+				rct = zones.at(curzone);
+				pnt.fillRect(rct.left() - 5, rct.top(), 5, rct.height(), Qt::green);
+			}
+			pnt.end();
+			frameChanged();
+		}
 	}
 	mousepos = ev->pos();
 }
 
 void xPlayer::wheelEvent(QWheelEvent* ev) {
 	if (ev->angleDelta().y() < 0) {
-		emit clicked();
+		if (zones.isEmpty()) {
+			emit clicked();
+		}
 	} else if (ev->angleDelta().y() > 0) {
 		emit clicked_r();
 	}

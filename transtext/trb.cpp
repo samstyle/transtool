@@ -133,7 +133,6 @@ int TRBLoader::v7_load_page() {
 	QString tmpstr;
 	QUuid id;
 	QUuid tmpid;
-	bool issel = false;
 	strm >> type;
 	while (type != T7_END) {
 		switch(type) {
@@ -206,16 +205,16 @@ int TRBLoader::v7_load_page() {
 						bm.row = page.text.size();
 						addBookmark(bm);
 					}
-					if (lin.src.text.startsWith("[BigBG")) lin.type = TL_TEXT;
+					lin.type = TL_TEXT;
 					lin.src.text.remove("　");
 					normLine(lin);
+					/*
 					if ((lin.type == TL_TEXT) && (lin.src.text.toLower() == "[select]")) {
 						issel = true;
 						lin.type = TL_SELECT;
 						lin.flag |= TF_SELECT;
-						page.text.append(lin);
 					} else if (issel) {
-						if (lin.src.text.isEmpty()) {
+						if (lin.src.text.isEmpty() || lin.src.text.startsWith("=") || lin.src.text.startsWith("[")) {
 							issel = false;
 							lin.flag &= ~(TF_SELECT & TF_SELITEM);
 							lin.type = TL_TEXT;
@@ -223,10 +222,9 @@ int TRBLoader::v7_load_page() {
 							lin.type = TL_SELECT;
 							lin.flag |= TF_SELITEM;
 						}
-						page.text.append(lin);
-					} else {
-						page.text.append(lin);
 					}
+					*/
+					page.text.append(lin);
 				}
 				break;
 			default:
@@ -236,7 +234,10 @@ int TRBLoader::v7_load_page() {
 		}
 		if (!err) strm >> type;
 	}
-	if (!err) putPage(page);
+	if (!err) {
+		fillFlags(&page);
+		putPage(page);
+	}
 	return err;
 }
 
@@ -474,6 +475,7 @@ int TRBLoader::v7_save(QTreeWidgetItem* par) {
 	idlist = getTreeIds(par);
 	foreach(id, idlist) {
 		pg = findPage(id);
+		fillFlags(pg);
 		if (pg != nullptr) {
 			strm << T7_PAGE;
 			strm << TP_UUID << pg->id;
@@ -485,23 +487,12 @@ int TRBLoader::v7_save(QTreeWidgetItem* par) {
 				strm << TL_TYPE << line.type;
 				strm << TL_FLAG << line.flag;
 				strm << TL_BMID << line.bmrkId;
-				// strm << TL_PIC << line.picId;
 				strm << TL_SN << line.src.name;
 				strm << TL_ST << line.src.text;
 				strm << TL_TN << line.trn.name;
 				strm << TL_TT << line.trn.text;
 				strm << T7_END;
 			}
-			/*
-			foreach(id, pg->imgs.keys()) {
-				img = pg->imgs[id];
-				strm << TP_IMG;
-				strm << TI_ID << id;
-				strm << TI_NAME << img.name;
-				strm << TI_ICO << img.img;
-				strm << TI_END;
-			}
-			*/
 			strm << T7_END;
 		}
 	}

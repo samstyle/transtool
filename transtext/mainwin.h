@@ -75,6 +75,7 @@ class xPlayer : public QLabel {
 	signals:
 		void clicked();
 		void clicked_r();
+		void selected(QString);
 		void closed();
 	private:
 		int cnt;
@@ -87,6 +88,11 @@ class xPlayer : public QLabel {
 		QPixmap ovr;		// overlay with text
 		QString curimgpath;	// current image file
 		TLine lin;
+		QList<QRect> zones;
+		QStringList selabs;
+		int curzone;
+		int getZone(QPoint);
+		void mousePressEvent(QMouseEvent*);
 		void mouseReleaseEvent(QMouseEvent*);
 		void mouseMoveEvent(QMouseEvent*);
 		void wheelEvent(QWheelEvent*);
@@ -167,6 +173,7 @@ class TWindow : public QWidget {
 		void playLine();
 		bool playNext();
 		void playPrev();
+		void jmpToLabel(QString);
 		void fontSelect();
 
 		void findStr(QString);
@@ -225,6 +232,7 @@ class TWindow : public QWidget {
 		void mergePrj(QString path = "");
 		bool savePrj(QString path = "", QTreeWidgetItem* = NULL);
 		void saveIt();
+		QList<TPage> openFiles(QFileDialog::FileMode);
 
 		TPage* newPage();
 		void openSrc();

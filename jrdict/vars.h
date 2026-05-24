@@ -7,11 +7,10 @@ struct dWord {
 	QString read;
 	QString type;
 	QString trans;
+	QString dict;	// filepath of dict it is from
 };
 
 struct dNode {
-//	QChar id;
-//	QList<dNode> childs;
 	QMap<QChar, dNode> childs;
 	QList<dWord> words;
 };
@@ -46,8 +45,7 @@ struct dictfind {
 
 extern QList<dictfind> findres;
 
-void loadDict();
-void saveDict();
+void saveDicts();
 void loadKanji(QString, int = 0);
 void loadForms();
 void reloadAll();

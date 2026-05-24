@@ -3,15 +3,14 @@
 #include "vars.h"
 #include "classes.h"
 
-//QString basedir=".";
 QString basedir;
 
 dNode dict;
 
-//dict sysdict;
 QList<formitem> forms;
 QMap<QString, kanjitem> kanji;
 QString dictpath;
+QString namepath;
 QString formpath;
 
 // tree dict
@@ -74,6 +73,11 @@ int findWord(dNode* node, dWord wrd) {
 }
 
 void addWord(dWord wrd) {
+	if (wrd.dict.isEmpty()) {
+		if (wrd.type == "name") {
+			wrd.dict = namepath;
+		}
+	}
 	dNode* nod = findNode(wrd.word, 1);
 	if (findWord(nod, wrd) < 0) {
 		nod->words.append(wrd);
@@ -260,35 +264,52 @@ void loadKanji(QString fname, int clr) {
 	}
 }
 
-void saveLeaf(QFile& file, dNode* nod) {
+void saveWord(QFile& file, dWord& wrd) {
+	file.write(wrd.word.toUtf8());
+	file.write("\t");
+	file.write(wrd.read.toUtf8());
+	file.write("\t");
+	file.write(wrd.type.toUtf8());
+	file.write("\t");
+	file.write(wrd.trans.toUtf8());
+	file.write("\r\n");
+}
+
+void saveLeaf(QFile& file, dNode* nod, QString path, int flag) {
 	dWord wrd;
 	foreach (wrd, nod->words) {
-		file.write(wrd.word.toUtf8());
-		file.write("\t");
-		file.write(wrd.read.toUtf8());
-		file.write("\t");
-		file.write(wrd.type.toUtf8());
-		file.write("\t");
-		file.write(wrd.trans.toUtf8());
-		file.write("\r\n");
+		if ((flag & 1) || (wrd.dict == path)) {
+			wrd.dict = path;
+			saveWord(file, wrd);
+		}
 	}
 	foreach (QChar key, nod->childs.keys()) {
-		saveLeaf(file, &nod->childs[key]);
+		saveLeaf(file, &nod->childs[key], path, flag);
 	}
 }
 
-void saveDict() {
-	QFile file(dictpath);
-	if (!file.open(QFile::WriteOnly)) return;
-	saveLeaf(file, &dict);
-	file.close();
+// flag.b0 - save parentless words in this dict
+void saveDict(QString path, int flag) {
+	QFile file(path);
+	if (file.open(QFile::WriteOnly)) {
+		saveLeaf(file, &dict, path, flag);
+		file.close();
+	}
 }
 
-void loadDict() {
-	QFile file(dictpath);
-	if (!file.open(QFile::ReadOnly)) return;
-	dict.words.clear();
-	dict.childs.clear();
+void saveDicts() {
+	QDir dir(basedir);
+	int flag;
+	QStringList lst = dir.entryList(QStringList() << "*.dic");
+	foreach(QString fname, lst) {
+		flag = (fname == "dict.dic") ? 1 : 0;
+		saveDict(basedir + fname, flag);
+	}
+}
+
+int loadDict(QString path) {
+	QFile file(path);
+	if (!file.open(QFile::ReadOnly)) return 0;
 	QStringList line;
 	dWord word;
 	int count = 0;
@@ -299,15 +320,29 @@ void loadDict() {
 			word.read = line[1];
 			word.type = line[2];
 			word.trans = line[3];
+			word.dict = path;
 			addWord(word);
 			count++;
 		}
 	}
-	qDebug() << "Words total\t"<< count;
+	return count;
+}
+
+void loadDicts() {
+	dict.words.clear();
+	dict.childs.clear();
+	QDir dir(basedir);
+	QStringList lst = dir.entryList(QStringList() << "*.dic", QDir::Files);
+	int count;
+	foreach(QString fname, lst) {
+		count = loadDict(basedir + fname);
+		qDebug() << fname << ":" << count << "words";
+	}
+	// qDebug() << "Words total\t"<< count;
 }
 
 void reloadAll() {
-	loadDict();
+	loadDicts();
 	loadForms();
 	QDir dir(basedir);
 	QStringList lst = dir.entryList(QStringList() << "*.jrk", QDir::Files);
@@ -322,6 +357,6 @@ void DictMain() {
 	basedir = QDir::homePath().append("/.config/samstyle/jrdict/");
 	formpath = basedir + "forms4.jrf";
 	dictpath = basedir + "dict.dic";
-
+	namepath = basedir + "names.dic";
 	reloadAll();
 }
