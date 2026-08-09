@@ -78,28 +78,32 @@ class xPlayer : public QLabel {
 		void selected(QString);
 		void closed();
 	private:
-		int cnt;
 		int moved;
 		QPoint mousepos;
 		QPoint picpos;
 		QSize picsize;
+		QTimer timer;
 
 		QMovie* mov;		// player for bg image
-		QPixmap ovr;		// overlay with text
-		QString curimgpath;	// current image file
+		QList<QPixmap> ovrlist;		// overlay with text
+		QStringList imgpathlist;	// current line image sequence (stable)
+		QStringList curimgpathlist;	// current line image sequence (runtime, 1st element deleted every img change)
 		TLine lin;
 		QList<QRect> zones;
 		QStringList selabs;
 		int curzone;
 		int getZone(QPoint);
+		void recreateOverlays(int, int);
 		void mousePressEvent(QMouseEvent*);
 		void mouseReleaseEvent(QMouseEvent*);
 		void mouseMoveEvent(QMouseEvent*);
 		void wheelEvent(QWheelEvent*);
 		void keyPressEvent(QKeyEvent*);
 		void closeEvent(QCloseEvent*);
+		void resizeEvent(QResizeEvent*);
 	private slots:
-		void frameChanged();
+		void redrawFrame();
+		void nextImage();
 };
 
 class TWindow : public QWidget {

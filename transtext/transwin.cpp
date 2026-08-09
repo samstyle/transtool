@@ -1988,7 +1988,7 @@ void fillImages(TPage* pg, QString imgdir) {
 	QString chstr;
 	QStringList ximglist;
 	QStringList chlist;
-	QString imgpath;
+	QStringList imgpath;
 	QStringList ovlpath;
 	bool isbg;
 	for (i = 0; i < cnt; i++) {
@@ -2021,15 +2021,18 @@ void fillImages(TPage* pg, QString imgdir) {
 			}
 			if (isbg) {
 				img.remove("]");
-				ximglist = fExistsR(imgdir, img);
-				if (!ximglist.isEmpty()) {
-					imgpath = ximglist.first();
-				} else {
-					imgpath.clear();
+				chlist = img.split(":", Qt::SkipEmptyParts);
+				imgpath.clear();
+				foreach(img, chlist) {
+					img = img.trimmed();	// delete spaces at begin/end
+					ximglist = fExistsR(imgdir, img);
+					if (!ximglist.isEmpty()) {
+						imgpath.append(ximglist.first());
+					}
 				}
 			}
 		}
-		lin->imgpath = imgpath;
+		lin->imgpathlist = imgpath;
 		lin->ovlpath = ovlpath;
 	}
 }
@@ -2091,9 +2094,9 @@ void TWindow::play() {
 	imgdir = getImgDir(curItem);
 	fillImages(curPage, imgdir);
 	fillFlags(curPage);
+	player->show();
 	player->reset();
 	player->playLine(curPage, curRow); // curPage->text[curRow]);
-	player->show();
 }
 
 bool TWindow::playNext() {

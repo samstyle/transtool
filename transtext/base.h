@@ -98,7 +98,7 @@ struct TLine {
 	int type = TL_TEXT;
 	int flag = 0;
 	QUuid bmrkId;
-	QString imgpath;
+	QStringList imgpathlist;
 	QStringList ovlpath;
 	TPhrase src;
 	TPhrase trn;

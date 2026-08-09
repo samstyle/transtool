@@ -1,46 +1,58 @@
 #include "mainwin.h"
 
+#define OVLCOUNT 4
+#define CHAROVL ovrlist[0]
+#define MENUOVL ovrlist[1]
+#define TEXTOVL ovrlist[2]
+#define TOPOVL	ovrlist[3]
+
 xPlayer::xPlayer(QWidget* p):QLabel(p) {
 	setWindowModality(Qt::ApplicationModal);
 	fnt.setPixelSize(32);
 	fnt.setFamily("Buxton Sketch");
 	setFixedSize(1280,720);
-	cnt = 0;
+	ovrlist.clear();
+	for(int i = 0; i < OVLCOUNT; i++) {
+		ovrlist.append(QPixmap(1280,720));
+		ovrlist.last().fill(Qt::transparent);
+	}
 	mov = new QMovie;
 	picpos = QPoint(0,0);
 	setMouseTracking(true);
 
-	connect(mov, SIGNAL(frameChanged(int)),this,SLOT(frameChanged()));
+	connect(mov, SIGNAL(frameChanged(int)),this,SLOT(redrawFrame()));
 }
 
 void xPlayer::closeEvent(QCloseEvent*) {
 	emit closed();
 }
 
-void xPlayer::reset() {
-	curimgpath.clear();
+void xPlayer::recreateOverlays(int w, int h) {
+	qDebug() << w << h;
+	for(int i = 0; i < OVLCOUNT; i++) {
+		ovrlist.at(0).scaled(w, h, Qt::KeepAspectRatio);
+	}
 }
 
-bool xPlayer::playLine(TPage* pg, int ln) { // TLine _l) {
+void xPlayer::resizeEvent(QResizeEvent* ev) {
+	recreateOverlays(ev->size().width(), ev->size().height());
+}
+
+void xPlayer::reset() {
+	imgpathlist.clear();
+}
+
+bool xPlayer::playLine(TPage* pg, int ln) {
 	int res = false;
-	// lin = _l;
 	lin = pg->text.at(ln);
 	QPainter pnt;
-	// text overlay
 	QString txt;
 	QString path;
 	QImage img;
 	int px,py;
-	int flag = Qt::TextWordWrap;
-	if (lin.trn.text.isEmpty()) {
-		txt = lin.src.text;
-		flag |= Qt::TextWrapAnywhere;
-	} else {
-		txt = lin.trn.text;
-	}
-	ovr = QPixmap(size());
-	ovr.fill(Qt::transparent);
-	pnt.begin(&ovr);
+	// draw chars
+	CHAROVL.fill(Qt::transparent);
+	pnt.begin(&CHAROVL);
 	foreach(path, lin.ovlpath) {
 		img.load(path);
 		px = (width() - img.width()) / 2;	// center
@@ -49,12 +61,17 @@ bool xPlayer::playLine(TPage* pg, int ln) { // TLine _l) {
 		if (py < 0) py = 0;
 		pnt.drawImage(px, py, img);
 	}
-	pnt.setFont(fnt);
-	pnt.setPen(Qt::white);
+	pnt.end();
 	selabs.clear();
 	zones.clear();
 	curzone = -1;
+	MENUOVL.fill(Qt::transparent);
+	TEXTOVL.fill(Qt::transparent);
 	if (lin.flag & TF_SELECT) {
+		// select
+		pnt.begin(&MENUOVL);
+		pnt.setFont(fnt);
+		pnt.setPen(Qt::white);
 		int _ln = ln;
 		QStringList variants;
 		TLine slin;
@@ -72,19 +89,31 @@ bool xPlayer::playLine(TPage* pg, int ln) { // TLine _l) {
 		} while (slin.flag & TF_SELITEM);
 		int cnt = variants.size();
 		int ys = (height() >> 1) - (cnt * 50);
-		int xs = width() >> 2;
-		int w = width() >> 1;
+		int xs = 20; // width() >> 2;
+		int w = width() - 40; // >> 1;
 		int h = 45;
 		QRect rct;
 		while (cnt > 0) {
 			rct.setRect(xs, ys, w, h);
 			zones.append(rct);
-			pnt.fillRect(rct, QColor(0, 0, 0, 200));
+			pnt.fillRect(rct, QColor(0, 0, 0, 160));
 			pnt.drawText(xs+2, ys+2, w-4, h-4, Qt::AlignHCenter | Qt::AlignVCenter, variants.takeFirst());
 			ys += (h + 5);
 			cnt--;
 		}
+		pnt.end();
 	} else {
+		// text ovl
+		int flag = Qt::TextWordWrap;
+		if (lin.trn.text.isEmpty()) {
+			txt = lin.src.text;
+			flag |= Qt::TextWrapAnywhere;
+		} else {
+			txt = lin.trn.text;
+		}
+		pnt.begin(&TEXTOVL);
+		pnt.setFont(fnt);
+		pnt.setPen(Qt::white);
 		QRect rct(5, height()-195, width()-10, 190);
 		QRect nrc(5, height()-235, 300, 80);
 		QLinearGradient grd(rct.topLeft(),rct.bottomLeft());
@@ -105,51 +134,72 @@ bool xPlayer::playLine(TPage* pg, int ln) { // TLine _l) {
 			pnt.fillPath(pth, grd);
 		}
 		pnt.drawText(rct.adjusted(20,10,-20,-10), flag, txt);
+		pnt.end();
 	}
-	pnt.end();
 
-	if (curimgpath != lin.imgpath) {
-		curimgpath = lin.imgpath;
-		if (!curimgpath.isEmpty() && QFile::exists(curimgpath)) {
-			mov->stop();
-			mov->setFileName(curimgpath);
-			mov->start();
-		} else {
+	if (imgpathlist != lin.imgpathlist) {
+		imgpathlist = lin.imgpathlist;
+		curimgpathlist = imgpathlist;
+		if (curimgpathlist.isEmpty()) {
 			reset();
+		} else {
+			nextImage();
 		}
 	} else if (mov->state() != QMovie::Running) {
 		mov->start();
 	}
-
-	frameChanged();
+	redrawFrame();
 	return res;
 }
 
-void xPlayer::frameChanged() {
+void xPlayer::nextImage() {
+	if (curimgpathlist.isEmpty()) return;
+	QString img = curimgpathlist.takeFirst();
+	if (QFile::exists(img)) {
+		mov->stop();
+		mov->setFileName(img);
+		mov->start();
+		if (mov->frameCount() < 2) {
+			timer.singleShot(3000, this, &xPlayer::nextImage);
+		}
+	} else {
+		nextImage();
+	}
+}
+
+void xPlayer::redrawFrame() {
 	QPainter pnt;
 	// frame
 	QPixmap pxm = mov->currentPixmap();
-	if (pxm.isNull() || curimgpath.isEmpty()) {
+	if (pxm.isNull() || imgpathlist.isEmpty()) {
 		pxm = QPixmap(size());
 		pxm.fill(Qt::black);
 		picpos = QPoint(0,0);
 	} else {
 		pxm = pxm.scaled(1280,720,Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
 		picsize = pxm.size();
-		if (pxm.width() * 9 > pxm.height() * 16) {		// wide
-			pxm = pxm.copy(picpos.x(), picpos.y(), pxm.height() * 16 / 9, pxm.height());
-		} else if (pxm.width() * 3 < pxm.height() * 4) {	// tall
-			pxm = pxm.copy(picpos.x(), picpos.y(), pxm.width(), pxm.width() * 9 / 16);
+		int w = picsize.width();
+		int h = picsize.height();
+		if (w * 9 > h * 16) {		// wide
+			pxm = pxm.copy(picpos.x(), picpos.y(), h * 16 / 9, h);
+		} else if (w * 3 < h * 4) {	// tall
+			pxm = pxm.copy(picpos.x(), picpos.y(), w, w * 9 / 16);
 		} else {
 			pxm = pxm.scaled(1280,720,Qt::KeepAspectRatio,Qt::SmoothTransformation);
 		}
 	}
-	setFixedSize(pxm.size());
+	setFixedSize(pxm.size());		// this recreates overlays
 	// draw overlay
 	pnt.begin(&pxm);
-	pnt.drawPixmap(0,0,ovr);
+	pnt.drawPixmap(0,0,CHAROVL);
+	pnt.drawPixmap(0,0,TEXTOVL);
+	pnt.drawPixmap(0,0,MENUOVL);
+	pnt.drawPixmap(0,0,TOPOVL);
 	pnt.end();
 	setPixmap(pxm);
+	if ((mov->frameCount() > 1) && (mov->currentFrameNumber() == (mov->frameCount() - 1)) && !curimgpathlist.isEmpty()) {
+		nextImage();
+	}
 }
 
 void xPlayer::mousePressEvent(QMouseEvent *ev) {
@@ -196,25 +246,24 @@ void xPlayer::mouseMoveEvent(QMouseEvent* ev) {
 		if (newpos != picpos) {
 			moved = 1;
 			picpos = newpos;
-			frameChanged();
+			redrawFrame();
 		}
 	} else {
 		// check cursor above one of QRect in zones
 		QRect rct;
 		int newcurzone = getZone(ev->pos());
 		if (newcurzone != curzone) {
-			QPainter pnt(&ovr);
-			if (curzone >= 0) {
-				rct = zones.at(curzone);
-				pnt.fillRect(rct.left() - 5, rct.top(), 5, rct.height(), qRgba(0,0,0,255));
-			}
+			TOPOVL.fill(Qt::transparent);
+			QPainter pnt;
+			pnt.begin(&TOPOVL);
 			curzone = newcurzone;
 			if (curzone >= 0) {
 				rct = zones.at(curzone);
-				pnt.fillRect(rct.left() - 5, rct.top(), 5, rct.height(), Qt::green);
+				pnt.fillRect(rct.left(), rct.top(), 5, rct.height(), Qt::green);
+				pnt.fillRect(rct.right() - 5, rct.top(), 5, rct.height(), Qt::green);
 			}
 			pnt.end();
-			frameChanged();
+			redrawFrame();
 		}
 	}
 	mousepos = ev->pos();
