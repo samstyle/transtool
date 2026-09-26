@@ -89,6 +89,22 @@ enum {
 #define TT_IMG	0x4D		// images dir
 #define	TT_END	0x0D		// end of current dir list
 
+class xImage {
+	public:
+		xImage() {}
+		QString path;
+		int xpos;
+		int ypos;
+		bool operator ==(xImage& i) {
+			if (path != i.path) return false;
+			if (xpos != i.xpos) return false;
+			if (ypos != i.ypos) return false;
+			return true;
+		}
+};
+
+typedef QList<xImage> xImageList;
+
 struct TPhrase {
 	QString name;
 	QString text;
@@ -98,8 +114,8 @@ struct TLine {
 	int type = TL_TEXT;
 	int flag = 0;
 	QUuid bmrkId;
-	QStringList imgpathlist;
-	QStringList ovlpath;
+	QList<xImageList> bgimages;	// sequence of complex image (layers)
+	xImageList ovlimages;		// chars
 	TPhrase src;
 	TPhrase trn;
 	QMap<QString,QVariant> par;
@@ -111,18 +127,11 @@ struct TIcon {
 	QIcon icon;
 };
 
-struct TImage {
-	QString name;
-	QImage img;
-};
-
 struct TPage {
 	QUuid id;
 	int flag;
 	int curRow;
 	QString name;
-//	QString imgdir;
-	QMap<QUuid,TImage> imgs;
 	QList<TLine> text;
 };
 

@@ -1871,7 +1871,7 @@ xFileTreeWidget::xFileTreeWidget(QWidget* p):QWidget(p) {
 	lay->addWidget(view);
 	setLayout(lay);
 	model = new QFileSystemModel;
-	model->setNameFilters(QStringList() << "*.jpg" << "*.jpeg" << "*.png" << "*.bmp" << "*.gif");
+	model->setNameFilters(QStringList() << "*.jpg" << "*.jpeg" << "*.png" << "*.bmp" << "*.gif" << "*.webp" << "*.mp4");
 	model->setFilter(QDir::NoDotAndDotDot | QDir::AllDirs | QDir::Files);
 	model->setNameFilterDisables(true);
 	model->setReadOnly(true);
@@ -1906,6 +1906,13 @@ void xFileTreeWidget::itemChosed(const QModelIndex& idx) {
 	QString relpath = inf.fileName();
 	emit s_selected(relpath);
 	close();
+}
+
+void xFileTreeWidget::keyPressEvent(QKeyEvent* ev) {
+	switch(ev->key()) {
+		case Qt::Key_Escape: close(); ev->ignore(); break;
+		default: ev->accept(); break;
+	}
 }
 
 // cbrd
@@ -1958,6 +1965,8 @@ QStringList fExistsR(QString imgdir, QString str) {
 	flt << str + ".png";
 	flt << str + ".bmp";
 	flt << str + ".gif";
+	flt << str + ".webp";
+	flt << str + ".mp4";
 	QDirIterator it(imgdir, flt, QDir::NoFilter, QDirIterator::Subdirectories);
 	if (!it.hasNext()) {
 		lst.clear();
@@ -1976,8 +1985,9 @@ QStringList fExistsR(QString imgdir, QString str) {
 	return lst;
 }
 
-// TODO: fill TLine::ovlpath list (chars, sub-images etc)
 // [CH:img],[CH:]
+// [img.png@0,0] - change position
+// [img.png@0,0+img2.png@5,5] - overlays (prepend to ovlimages)
 void fillImages(TPage* pg, QString imgdir) {
 	if (pg == nullptr) return;
 	QString img;
@@ -1988,16 +1998,22 @@ void fillImages(TPage* pg, QString imgdir) {
 	QString chstr;
 	QStringList ximglist;
 	QStringList chlist;
-	QStringList imgpath;
-	QStringList ovlpath;
+	// TODO: QList<QList<xImage> > - sequence of layers?
+	QList<xImageList> imglist;
+	xImageList bglist;
+	xImageList ovllist;
+	QStringList lista;
+	QStringList listb;
+	xImage ximg;
+//	int xpos,ypos;
 	bool isbg;
 	for (i = 0; i < cnt; i++) {
 		lin = &pg->text[i];
 		txt = lin->src.text;
 		txt.remove(" ");
 		if (imgdir.isEmpty()) {
-			imgpath.clear();
-			ovlpath.clear();
+			imglist.clear();
+			ovllist.clear();
 		} else if (txt.startsWith("[") && !(lin->flag & TF_SELECT)) {
 			isbg = true;
 			if (txt.startsWith("[BG:")) {
@@ -2011,29 +2027,50 @@ void fillImages(TPage* pg, QString imgdir) {
 				chstr = txt.mid(4);
 				chstr.remove("]");
 				chlist = chstr.split(",",Qt::KeepEmptyParts);
-				ovlpath.clear();
+				ovllist.clear();
 				foreach(chstr, chlist) {
 					ximglist = fExistsR(imgdir, chstr);
-					ovlpath.append(fExistsR(imgdir, chstr));
+					if (!ximglist.isEmpty()) {
+						ximg.path = ximglist.first();
+						ximg.xpos = 0;
+						ximg.ypos = 0;
+						ovllist.append(ximg);
+					}
 				}
 			} else {
 				img = txt.mid(1);
 			}
 			if (isbg) {
 				img.remove("]");
-				chlist = img.split(":", Qt::SkipEmptyParts);
-				imgpath.clear();
+				chlist = img.split(":", Qt::SkipEmptyParts);		// sequence of images
+				imglist.clear();
 				foreach(img, chlist) {
-					img = img.trimmed();	// delete spaces at begin/end
-					ximglist = fExistsR(imgdir, img);
-					if (!ximglist.isEmpty()) {
-						imgpath.append(ximglist.first());
+					bglist.clear();
+					lista = img.split("+", Qt::SkipEmptyParts);	// bg + layers
+					foreach(img, lista) {
+						// img = img.trimmed();	// delete spaces at begin/end
+						listb = img.trimmed().split("@", Qt::SkipEmptyParts);
+						img = listb.first();
+						ximg.xpos = 0;
+						ximg.ypos = 0;
+						if (listb.size() > 1) {
+							listb = listb.at(1).split(",", Qt::SkipEmptyParts);
+							ximg.xpos = listb.at(0).toInt();
+							if (listb.size() > 1) ximg.ypos = listb.at(1).toInt();
+						}
+						// qDebug() << imgdir << img << ximg.xpos << ximg.ypos;
+						ximglist = fExistsR(imgdir, img);
+						if (!ximglist.isEmpty()) {
+							ximg.path = ximglist.first();
+							bglist.append(ximg);		// bg + layers
+						}
 					}
+					imglist.append(bglist);
 				}
 			}
 		}
-		lin->imgpathlist = imgpath;
-		lin->ovlpath = ovlpath;
+		lin->bgimages = imglist;
+		lin->ovlimages = ovllist;
 	}
 }
 

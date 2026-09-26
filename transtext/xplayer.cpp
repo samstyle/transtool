@@ -1,10 +1,11 @@
 #include "mainwin.h"
 
-#define OVLCOUNT 4
-#define CHAROVL ovrlist[0]
-#define MENUOVL ovrlist[1]
-#define TEXTOVL ovrlist[2]
-#define TOPOVL	ovrlist[3]
+#define OVLCOUNT 5
+#define BGOVL	ovrlist[0]
+#define CHAROVL ovrlist[1]
+#define MENUOVL ovrlist[2]
+#define TEXTOVL ovrlist[3]
+#define TOPOVL	ovrlist[4]
 
 xPlayer::xPlayer(QWidget* p):QLabel(p) {
 	setWindowModality(Qt::ApplicationModal);
@@ -13,10 +14,11 @@ xPlayer::xPlayer(QWidget* p):QLabel(p) {
 	setFixedSize(1280,720);
 	ovrlist.clear();
 	for(int i = 0; i < OVLCOUNT; i++) {
-		ovrlist.append(QPixmap(1280,720));
+		ovrlist.append(QPixmap(1920,1080));
 		ovrlist.last().fill(Qt::transparent);
 	}
 	mov = new QMovie;
+	mov->setCacheMode(QMovie::CacheAll);
 	picpos = QPoint(0,0);
 	setMouseTracking(true);
 
@@ -27,11 +29,12 @@ void xPlayer::closeEvent(QCloseEvent*) {
 	emit closed();
 }
 
+// BGOVL,CHAROVL is mov->curFrame().size()
 void xPlayer::recreateOverlays(int w, int h) {
-	qDebug() << w << h;
-	for(int i = 0; i < OVLCOUNT; i++) {
-		ovrlist.at(0).scaled(w, h, Qt::KeepAspectRatio);
-	}
+//	qDebug() << w << h;
+	MENUOVL=MENUOVL.scaled(w,h,Qt::KeepAspectRatio);
+	TEXTOVL	= TEXTOVL.scaled(w,h,Qt::KeepAspectRatio);
+	TOPOVL = TOPOVL.scaled(w,h,Qt::KeepAspectRatio);
 }
 
 void xPlayer::resizeEvent(QResizeEvent* ev) {
@@ -39,26 +42,35 @@ void xPlayer::resizeEvent(QResizeEvent* ev) {
 }
 
 void xPlayer::reset() {
-	imgpathlist.clear();
+	bglist.clear();
 }
 
 bool xPlayer::playLine(TPage* pg, int ln) {
 	int res = false;
+	if (ln == curline) return res;
+	curline = ln;
 	lin = pg->text.at(ln);
 	QPainter pnt;
 	QString txt;
 	QString path;
 	QImage img;
+	xImage ximg;
 	int px,py;
 	// draw chars
 	CHAROVL.fill(Qt::transparent);
 	pnt.begin(&CHAROVL);
-	foreach(path, lin.ovlpath) {
+	foreach(ximg, lin.ovlimages) {
+		path = ximg.path;
 		img.load(path);
+#if 0
 		px = (width() - img.width()) / 2;	// center
 		py = height() - img.height();		// bottom
 		if (px < 0) px = 0;
 		if (py < 0) py = 0;
+#else
+		px = ximg.xpos;
+		py = ximg.ypos;
+#endif
 		pnt.drawImage(px, py, img);
 	}
 	pnt.end();
@@ -136,11 +148,10 @@ bool xPlayer::playLine(TPage* pg, int ln) {
 		pnt.drawText(rct.adjusted(20,10,-20,-10), flag, txt);
 		pnt.end();
 	}
-
-	if (imgpathlist != lin.imgpathlist) {
-		imgpathlist = lin.imgpathlist;
-		curimgpathlist = imgpathlist;
-		if (curimgpathlist.isEmpty()) {
+	if (bglist != lin.bgimages) {
+		bglist = lin.bgimages;
+		curbglist = bglist;
+		if (curbglist.isEmpty()) {
 			reset();
 		} else {
 			nextImage();
@@ -153,51 +164,85 @@ bool xPlayer::playLine(TPage* pg, int ln) {
 }
 
 void xPlayer::nextImage() {
-	if (curimgpathlist.isEmpty()) return;
-	QString img = curimgpathlist.takeFirst();
-	if (QFile::exists(img)) {
+	if (curbglist.isEmpty()) return;
+	xImageList imgs = curbglist.takeFirst();
+	BGOVL.fill(Qt::transparent);
+	QPainter pnt;
+	QPixmap pxm;
+	if (imgs.size() < 1) {
 		mov->stop();
-		mov->setFileName(img);
-		mov->start();
-		if (mov->frameCount() < 2) {
-			timer.singleShot(3000, this, &xPlayer::nextImage);
-		}
 	} else {
-		nextImage();
+		xImage bgimg = imgs.takeFirst();
+		if (QFile::exists(bgimg.path)) {
+			mov->stop();
+			mov->setFileName(bgimg.path);
+			mov->start();
+			// NOTE: picsize is scaled, must use original frame size
+			QSize frmsz = mov->frameRect().size();
+			if (frmsz != BGOVL.size()) {
+				BGOVL=BGOVL.scaled(frmsz);
+				BGOVL=CHAROVL.scaled(frmsz);
+			}
+			// load & bg layers
+			pnt.begin(&BGOVL);
+			foreach(bgimg, imgs) {
+				if (pxm.load(bgimg.path)) {
+					// qDebug() << "ovl size " << pxm.size() << "over canvas" << BGOVL.size();
+					pnt.drawPixmap(bgimg.xpos, bgimg.ypos, pxm);
+				}
+			}
+			pnt.end();
+			if (mov->frameCount() < 2) {
+				timer.singleShot(3000, this, &xPlayer::nextImage);
+			}
+		} else {
+			nextImage();
+		}
 	}
 }
 
+// TODO: overlays not drawing properly
 void xPlayer::redrawFrame() {
 	QPainter pnt;
 	// frame
-	QPixmap pxm = mov->currentPixmap();
-	if (pxm.isNull() || imgpathlist.isEmpty()) {
-		pxm = QPixmap(size());
+	QPixmap pxm = mov->currentPixmap();		// bg only (w/o layers)
+	if (pxm.isNull() || bglist.isEmpty()) {
+		picsize = size();
+		pxm = QPixmap(picsize);
 		pxm.fill(Qt::black);
 		picpos = QPoint(0,0);
 	} else {
-		pxm = pxm.scaled(1280,720,Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
-		picsize = pxm.size();
+		picsize = pxm.size().scaled(1280,720,Qt::KeepAspectRatioByExpanding);		// scaled to 1280x720
 		int w = picsize.width();
 		int h = picsize.height();
+		// draw overlays & chars over bg
+		pnt.begin(&pxm);
+		pnt.drawPixmap(0,0,BGOVL);
+		pnt.drawPixmap(0,0,CHAROVL);
+		pnt.end();
+		// resize
+		pxm = pxm.scaled(1280,720,Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
+		// cut
 		if (w * 9 > h * 16) {		// wide
 			pxm = pxm.copy(picpos.x(), picpos.y(), h * 16 / 9, h);
 		} else if (w * 3 < h * 4) {	// tall
 			pxm = pxm.copy(picpos.x(), picpos.y(), w, w * 9 / 16);
 		} else {
-			pxm = pxm.scaled(1280,720,Qt::KeepAspectRatio,Qt::SmoothTransformation);
+			// pxm = pxm.scaled(1280,720,Qt::KeepAspectRatio,Qt::SmoothTransformation);
 		}
 	}
-	setFixedSize(pxm.size());		// this recreates overlays
-	// draw overlay
+	// result is scaled to 1280x720 and drawed into window
+	setFixedSize(pxm.size());
+	// text,menu & top overlays drawed after scaling
 	pnt.begin(&pxm);
-	pnt.drawPixmap(0,0,CHAROVL);
 	pnt.drawPixmap(0,0,TEXTOVL);
 	pnt.drawPixmap(0,0,MENUOVL);
 	pnt.drawPixmap(0,0,TOPOVL);
 	pnt.end();
+
 	setPixmap(pxm);
-	if ((mov->frameCount() > 1) && (mov->currentFrameNumber() == (mov->frameCount() - 1)) && !curimgpathlist.isEmpty()) {
+
+	if ((mov->frameCount() > 1) && (mov->currentFrameNumber() == (mov->frameCount() - 1)) && !curbglist.isEmpty()) {
 		nextImage();
 	}
 }
@@ -206,9 +251,10 @@ void xPlayer::mousePressEvent(QMouseEvent *ev) {
 	if (moved) return;
 	if (ev->button() == Qt::LeftButton) {
 		if (zones.size() == 0) {
-			emit clicked();
+			// emit clicked();
 		} else if (curzone >= 0) {
 			if (!selabs.at(curzone).isEmpty()) {
+				TOPOVL.fill(Qt::transparent);
 				emit selected(selabs.at(curzone));
 			}
 		}
@@ -219,6 +265,8 @@ void xPlayer::mouseReleaseEvent(QMouseEvent *ev) {
 	if (ev->button() == Qt::LeftButton) {
 		if (moved) {
 			moved = 0;
+		} else {
+			emit clicked();
 		}
 	}
 }

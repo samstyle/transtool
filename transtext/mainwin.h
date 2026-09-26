@@ -60,6 +60,7 @@ class xFileTreeWidget : public QWidget {
 		QTreeView* tree;
 		QLabel* view;
 		QFileSystemModel* model;
+		void keyPressEvent(QKeyEvent*);
 	private slots:
 		void itemClick(const QModelIndex&, const QModelIndex&);
 		void itemChosed(const QModelIndex&);
@@ -79,6 +80,7 @@ class xPlayer : public QLabel {
 		void closed();
 	private:
 		int moved;
+		int curline;
 		QPoint mousepos;
 		QPoint picpos;
 		QSize picsize;
@@ -86,8 +88,8 @@ class xPlayer : public QLabel {
 
 		QMovie* mov;		// player for bg image
 		QList<QPixmap> ovrlist;		// overlay with text
-		QStringList imgpathlist;	// current line image sequence (stable)
-		QStringList curimgpathlist;	// current line image sequence (runtime, 1st element deleted every img change)
+		QList<xImageList> bglist;	// current line image sequence (stable)
+		QList<xImageList> curbglist;	// current line image sequence (runtime, 1st element deleted every img change)
 		TLine lin;
 		QList<QRect> zones;
 		QStringList selabs;

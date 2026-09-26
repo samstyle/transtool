@@ -128,11 +128,11 @@ int TRBLoader::v7_load_page() {
 	TPage page;
 	page.curRow = -1;
 	TLine lin;
-	TImage img;
 	TBookmark bm;
 	QString tmpstr;
 	QUuid id;
 	QUuid tmpid;
+	QImage tmpimg;
 	strm >> type;
 	while (type != T7_END) {
 		switch(type) {
@@ -148,21 +148,14 @@ int TRBLoader::v7_load_page() {
 			case TP_DIR:
 				strm >> tmpstr;
 				break;
-			case TP_IMG:
+			case TP_IMG:		// obsolete
 				do {
 					strm >> type;
 					switch(type) {
 						case TI_ID: strm >> id; break;
-						case TI_NAME: strm >> img.name; break;
-						case TI_ICO: strm >> img.img; break;
-						case TI_END:
-							if (!img.name.isEmpty()) {
-								if (id.isNull())
-									id = QUuid::createUuid();
-								page.imgs[id] = img;
-								img.name.clear();
-							}
-							break;
+						case TI_NAME: strm >> tmpstr; break; // img.name; break;
+						case TI_ICO: strm >> tmpimg; break; // img.img; break;
+						case TI_END: break;
 						default:
 							err = 1;
 							type = TI_END;
