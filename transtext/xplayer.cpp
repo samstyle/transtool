@@ -29,16 +29,11 @@ void xPlayer::closeEvent(QCloseEvent*) {
 	emit closed();
 }
 
-// BGOVL,CHAROVL is mov->curFrame().size()
-void xPlayer::recreateOverlays(int w, int h) {
-//	qDebug() << w << h;
-	MENUOVL=MENUOVL.scaled(w,h,Qt::KeepAspectRatio);
-	TEXTOVL	= TEXTOVL.scaled(w,h,Qt::KeepAspectRatio);
-	TOPOVL = TOPOVL.scaled(w,h,Qt::KeepAspectRatio);
-}
-
 void xPlayer::resizeEvent(QResizeEvent* ev) {
-	recreateOverlays(ev->size().width(), ev->size().height());
+	QSize sz = ev->size();
+	MENUOVL=MENUOVL.scaled(sz,Qt::IgnoreAspectRatio);
+	TEXTOVL	= TEXTOVL.scaled(sz,Qt::IgnoreAspectRatio);
+	TOPOVL = TOPOVL.scaled(sz,Qt::IgnoreAspectRatio);
 }
 
 void xPlayer::reset() {
@@ -79,6 +74,8 @@ bool xPlayer::playLine(TPage* pg, int ln) {
 	curzone = -1;
 	MENUOVL.fill(Qt::transparent);
 	TEXTOVL.fill(Qt::transparent);
+	int wwid = TEXTOVL.width();
+	int whig = TEXTOVL.height();
 	if (lin.flag & TF_SELECT) {
 		// select
 		pnt.begin(&MENUOVL);
@@ -102,7 +99,7 @@ bool xPlayer::playLine(TPage* pg, int ln) {
 		int cnt = variants.size();
 		int ys = (height() >> 1) - (cnt * 50);
 		int xs = 20; // width() >> 2;
-		int w = width() - 40; // >> 1;
+		int w = wwid - 40; // >> 1;
 		int h = 45;
 		QRect rct;
 		while (cnt > 0) {
@@ -126,8 +123,8 @@ bool xPlayer::playLine(TPage* pg, int ln) {
 		pnt.begin(&TEXTOVL);
 		pnt.setFont(fnt);
 		pnt.setPen(Qt::white);
-		QRect rct(5, height()-195, width()-10, 190);
-		QRect nrc(5, height()-235, 300, 80);
+		QRect rct(5, whig-195, wwid-10, 190);
+		QRect nrc(5, whig-235, 300, 80);
 		QLinearGradient grd(rct.topLeft(),rct.bottomLeft());
 		QPainterPath pth;
 		pth.setFillRule(Qt::WindingFill);
@@ -212,16 +209,19 @@ void xPlayer::redrawFrame() {
 		pxm.fill(Qt::black);
 		picpos = QPoint(0,0);
 	} else {
-		picsize = pxm.size().scaled(1280,720,Qt::KeepAspectRatioByExpanding);		// scaled to 1280x720
-		int w = picsize.width();
-		int h = picsize.height();
+		picsize = pxm.size();
 		// draw overlays & chars over bg
 		pnt.begin(&pxm);
 		pnt.drawPixmap(0,0,BGOVL);
 		pnt.drawPixmap(0,0,CHAROVL);
 		pnt.end();
 		// resize
-		pxm = pxm.scaled(1280,720,Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
+		if ((picsize.width() > 1280) || (picsize.height() > 768)) {
+			picsize.scale(1280,720,Qt::KeepAspectRatioByExpanding);		// scaled to 1280x720);
+			pxm = pxm.scaled(1280,720,Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
+		}
+		int w = picsize.width();
+		int h = picsize.height();
 		// cut
 		if (w * 9 > h * 16) {		// wide
 			pxm = pxm.copy(picpos.x(), picpos.y(), h * 16 / 9, h);
@@ -231,7 +231,7 @@ void xPlayer::redrawFrame() {
 			// pxm = pxm.scaled(1280,720,Qt::KeepAspectRatio,Qt::SmoothTransformation);
 		}
 	}
-	// result is scaled to 1280x720 and drawed into window
+	// result is scaled to 1280x720 (if bigger) and drawed into window
 	setFixedSize(pxm.size());
 	// text,menu & top overlays drawed after scaling
 	pnt.begin(&pxm);

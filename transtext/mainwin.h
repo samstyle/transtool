@@ -95,7 +95,6 @@ class xPlayer : public QLabel {
 		QStringList selabs;
 		int curzone;
 		int getZone(QPoint);
-		void recreateOverlays(int, int);
 		void mousePressEvent(QMouseEvent*);
 		void mouseReleaseEvent(QMouseEvent*);
 		void mouseMoveEvent(QMouseEvent*);
