@@ -34,41 +34,29 @@ void xPlayer::resizeEvent(QResizeEvent* ev) {
 	MENUOVL=MENUOVL.scaled(sz,Qt::IgnoreAspectRatio);
 	TEXTOVL	= TEXTOVL.scaled(sz,Qt::IgnoreAspectRatio);
 	TOPOVL = TOPOVL.scaled(sz,Qt::IgnoreAspectRatio);
+	drawOverlays();
 }
 
 void xPlayer::reset() {
 	bglist.clear();
 }
 
-bool xPlayer::playLine(TPage* pg, int ln) {
-	int res = false;
-	if (ln == curline) return res;
-	curline = ln;
-	lin = pg->text.at(ln);
+void xPlayer::drawChars() {
 	QPainter pnt;
-	QString txt;
-	QString path;
 	QImage img;
 	xImage ximg;
-	int px,py;
-	// draw chars
 	CHAROVL.fill(Qt::transparent);
 	pnt.begin(&CHAROVL);
 	foreach(ximg, lin.ovlimages) {
-		path = ximg.path;
-		img.load(path);
-#if 0
-		px = (width() - img.width()) / 2;	// center
-		py = height() - img.height();		// bottom
-		if (px < 0) px = 0;
-		if (py < 0) py = 0;
-#else
-		px = ximg.xpos;
-		py = ximg.ypos;
-#endif
-		pnt.drawImage(px, py, img);
+		img.load(ximg.path);
+		pnt.drawImage(ximg.xpos, ximg.ypos, img);
 	}
 	pnt.end();
+}
+
+void xPlayer::drawOverlays() {
+	QPainter pnt;
+	QString txt;
 	selabs.clear();
 	zones.clear();
 	curzone = -1;
@@ -81,7 +69,7 @@ bool xPlayer::playLine(TPage* pg, int ln) {
 		pnt.begin(&MENUOVL);
 		pnt.setFont(fnt);
 		pnt.setPen(Qt::white);
-		int _ln = ln;
+		int _ln = curline;
 		QStringList variants;
 		TLine slin;
 		do {
@@ -145,10 +133,23 @@ bool xPlayer::playLine(TPage* pg, int ln) {
 		pnt.drawText(rct.adjusted(20,10,-20,-10), flag, txt);
 		pnt.end();
 	}
+}
+
+bool xPlayer::playLine(TPage* _pg, int ln) {
+	int res = false;
+	if ((pg == _pg) && (ln == curline)) return res;		// same line
+	pg = _pg;
+	curline = ln;
+	lin = pg->text.at(ln);
+	// draw chars
+	drawChars();
+	// text/menu+top
+	drawOverlays();
+	// if image(s) is changed, restart
 	if (bglist != lin.bgimages) {
 		bglist = lin.bgimages;
 		curbglist = bglist;
-		if (curbglist.isEmpty()) {
+		if (curbglist.isEmpty()) {	// no images left
 			reset();
 		} else {
 			nextImage();
@@ -156,8 +157,9 @@ bool xPlayer::playLine(TPage* pg, int ln) {
 	} else if (mov->state() != QMovie::Running) {
 		mov->start();
 	}
+	// combine all layers TOGEZZZA
 	redrawFrame();
-	return res;
+	return true;
 }
 
 void xPlayer::nextImage() {

@@ -90,10 +90,15 @@ class xPlayer : public QLabel {
 		QList<QPixmap> ovrlist;		// overlay with text
 		QList<xImageList> bglist;	// current line image sequence (stable)
 		QList<xImageList> curbglist;	// current line image sequence (runtime, 1st element deleted every img change)
+		TPage* pg;
 		TLine lin;
 		QList<QRect> zones;
 		QStringList selabs;
 		int curzone;
+
+		void drawOverlays();		// text | menu
+		void drawChars();		// chars
+
 		int getZone(QPoint);
 		void mousePressEvent(QMouseEvent*);
 		void mouseReleaseEvent(QMouseEvent*);
