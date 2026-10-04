@@ -158,6 +158,8 @@ TPage loadKS(QString fnam, int cpage) {
 						page.text.append(elin);
 						nlin.src.text = QString("[BG:%0]").arg(param.pars["haikei"]);
 						page.text.append(nlin);
+					} else if (param.com == "ch") {
+						tlin.src.text.append(param.pars["text"]);
 					} else if ((param.com == "haikei") || (param.com == "bg") || (param.com == "ev") || (param.com == "evcg")) {
 						str = param.pars["file"];
 						if (str.isEmpty())

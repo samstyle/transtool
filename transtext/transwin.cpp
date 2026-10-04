@@ -1987,12 +1987,15 @@ QStringList fExistsR(QString imgdir, QString str) {
 
 // [CH:img],[CH:]
 // [img.png@0,0] - change position
+// [img.png@@5:img2.png] - set showing time (for image sequence)
+// [img.png@0,0@5] - set pos & time both
 // [img.png@0,0+img2.png@5,5] - overlays (prepend to ovlimages)
 void fillImages(TPage* pg, QString imgdir) {
 	if (pg == nullptr) return;
 	QString img;
 	int cnt = pg->text.size();
 	int i;
+	int tm;
 	TLine* lin;
 	QString txt;
 	QString chstr;
@@ -2049,14 +2052,21 @@ void fillImages(TPage* pg, QString imgdir) {
 					lista = img.split("+", Qt::SkipEmptyParts);	// bg + layers
 					foreach(img, lista) {
 						// img = img.trimmed();	// delete spaces at begin/end
-						listb = img.trimmed().split("@", Qt::SkipEmptyParts);
+						listb = img.trimmed().split("@", Qt::KeepEmptyParts);
 						img = listb.first();
 						ximg.xpos = 0;
 						ximg.ypos = 0;
+						ximg.time = 0;
+						if (listb.size() > 2) {
+							tm = listb.at(2).toInt();
+							if (tm > 0) ximg.time = tm * 1000;
+						}
 						if (listb.size() > 1) {
-							listb = listb.at(1).split(",", Qt::SkipEmptyParts);
-							ximg.xpos = listb.at(0).toInt();
-							if (listb.size() > 1) ximg.ypos = listb.at(1).toInt();
+							if (!listb.at(1).isEmpty()) {
+								listb = listb.at(1).split(",", Qt::SkipEmptyParts);
+								ximg.xpos = listb.at(0).toInt();
+								if (listb.size() > 2) ximg.ypos = listb.at(1).toInt();
+							}
 						}
 						// qDebug() << imgdir << img << ximg.xpos << ximg.ypos;
 						ximglist = fExistsR(imgdir, img);
@@ -2065,7 +2075,8 @@ void fillImages(TPage* pg, QString imgdir) {
 							bglist.append(ximg);		// bg + layers
 						}
 					}
-					imglist.append(bglist);
+					if (bglist.size() > 0)
+						imglist.append(bglist);
 				}
 			}
 		}

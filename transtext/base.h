@@ -95,6 +95,7 @@ class xImage {
 		QString path;
 		int xpos;
 		int ypos;
+		int time;
 		bool operator ==(xImage& i) {
 			if (path != i.path) return false;
 			if (xpos != i.xpos) return false;

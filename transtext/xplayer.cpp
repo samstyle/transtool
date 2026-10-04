@@ -39,6 +39,9 @@ void xPlayer::resizeEvent(QResizeEvent* ev) {
 
 void xPlayer::reset() {
 	bglist.clear();
+	QPixmap pxm(size());
+	pxm.fill(Qt::black);
+	setPixmap(pxm);
 }
 
 void xPlayer::drawChars() {
@@ -163,39 +166,48 @@ bool xPlayer::playLine(TPage* _pg, int ln) {
 }
 
 void xPlayer::nextImage() {
-	if (curbglist.isEmpty()) return;
-	xImageList imgs = curbglist.takeFirst();
-	BGOVL.fill(Qt::transparent);
-	QPainter pnt;
 	QPixmap pxm;
-	if (imgs.size() < 1) {
-		mov->stop();
-	} else {
-		xImage bgimg = imgs.takeFirst();
-		if (QFile::exists(bgimg.path)) {
+	QPainter pnt;
+	xImageList imgs;
+	QSize frmsz;
+	int tm;
+	timer.stop();
+	if (!curbglist.isEmpty()) {
+		imgs = curbglist.takeFirst();
+		BGOVL.fill(Qt::transparent);
+		if (imgs.size() < 1) {
 			mov->stop();
-			mov->setFileName(bgimg.path);
-			mov->start();
-			// NOTE: picsize is scaled, must use original frame size
-			QSize frmsz = mov->frameRect().size();
-			if (frmsz != BGOVL.size()) {
-				BGOVL=BGOVL.scaled(frmsz);
-				BGOVL=CHAROVL.scaled(frmsz);
-			}
-			// load & bg layers
-			pnt.begin(&BGOVL);
-			foreach(bgimg, imgs) {
-				if (pxm.load(bgimg.path)) {
-					// qDebug() << "ovl size " << pxm.size() << "over canvas" << BGOVL.size();
-					pnt.drawPixmap(bgimg.xpos, bgimg.ypos, pxm);
-				}
-			}
-			pnt.end();
-			if (mov->frameCount() < 2) {
-				timer.singleShot(3000, this, &xPlayer::nextImage);
-			}
 		} else {
-			nextImage();
+			xImage bgimg = imgs.takeFirst();
+			if (QFile::exists(bgimg.path)) {
+				// set image timer if there is other images
+				if (!curbglist.isEmpty()) {
+					tm = bgimg.time;
+					if (tm < 1) tm = 3000;
+					timer.setSingleShot(true);
+					timer.singleShot(tm, this, &xPlayer::nextImage);
+				}
+				mov->stop();
+				mov->setFileName(bgimg.path);
+				mov->start();
+				// NOTE: picsize is scaled, must use original frame size
+				frmsz = mov->frameRect().size();
+				if (frmsz != BGOVL.size()) {
+					BGOVL=BGOVL.scaled(frmsz);
+					BGOVL=CHAROVL.scaled(frmsz);
+				}
+				// load & bg layers
+				pnt.begin(&BGOVL);
+				foreach(bgimg, imgs) {
+					if (pxm.load(bgimg.path)) {
+						// qDebug() << "ovl size " << pxm.size() << "over canvas" << BGOVL.size();
+						pnt.drawPixmap(bgimg.xpos, bgimg.ypos, pxm);
+					}
+				}
+				pnt.end();
+			} else {
+				nextImage();
+			}
 		}
 	}
 }
