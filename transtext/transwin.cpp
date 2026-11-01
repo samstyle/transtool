@@ -284,6 +284,20 @@ void TWindow::fillSJMenu() {
 					bmMenu->addAction(bm->name)->setData(i);
 				}
 			}
+#if 0
+			if (line->src.text.startsWith("#")) {
+				txt = line->src.text;
+			} else if (line->trn.text.startsWith("#")) {
+				txt = line->trn.text;
+			} else {
+				txt.clear();
+			}
+			if (!txt.isEmpty()) {
+				txt.remove("#");
+				txt = txt.trimmed();
+				sjMenu->addAction(txt)->setData(i);
+			}
+#else
 			if (line->src.text.startsWith("==") || line->trn.text.startsWith("==")) {
 				if (line->trn.text.isEmpty()) {
 					txt = line->src.text;
@@ -300,7 +314,12 @@ void TWindow::fillSJMenu() {
 				txt = line->src.text;
 				txt.prepend(QString("%0 : ").arg(i));
 				sjMenu->addAction(txt)->setData(i);
+			} else if (line->src.text.startsWith("#")) {
+				txt = line->src.text;
+				txt.remove("#");
+				sjMenu->addAction(txt)->setData(i);
 			}
+#endif
 		}
 		QString imgdir = getImgDir(curItem);
 		ui.actRmImgDir->setVisible(!imgdir.isEmpty());
@@ -2007,6 +2026,7 @@ void fillImages(TPage* pg, QString imgdir) {
 	xImageList ovllist;
 	QStringList lista;
 	QStringList listb;
+	QStringList listc;
 	xImage ximg;
 //	int xpos,ypos;
 	bool isbg;
@@ -2057,16 +2077,16 @@ void fillImages(TPage* pg, QString imgdir) {
 						ximg.xpos = 0;
 						ximg.ypos = 0;
 						ximg.time = 0;
+						// pos
+						if (listb.size() > 1) {
+							listc = listb.at(1).split(",", Qt::SkipEmptyParts);
+							if (listc.size() > 0) ximg.xpos = listc.at(0).toInt();
+							if (listc.size() > 1) ximg.ypos = listc.at(1).toInt();
+						}
+						// timer
 						if (listb.size() > 2) {
 							tm = listb.at(2).toInt();
 							if (tm > 0) ximg.time = tm * 1000;
-						}
-						if (listb.size() > 1) {
-							if (!listb.at(1).isEmpty()) {
-								listb = listb.at(1).split(",", Qt::SkipEmptyParts);
-								ximg.xpos = listb.at(0).toInt();
-								if (listb.size() > 2) ximg.ypos = listb.at(1).toInt();
-							}
 						}
 						// qDebug() << imgdir << img << ximg.xpos << ximg.ypos;
 						ximglist = fExistsR(imgdir, img);

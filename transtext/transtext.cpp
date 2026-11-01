@@ -410,6 +410,7 @@ int getLineStatus(TLine line) {
 	if ((line.type == TL_TEXT) || (line.type == TL_SELECT)) {
 		if (!(line.src.text.startsWith("[") ||
 			(line.src.text.startsWith("==")) ||
+			(line.src.text.startsWith("#")) ||
 			(line.src.text.isEmpty() && line.src.name.isEmpty()))) {
 				res = LS_UNTRN;
 				if (line.src.text.isEmpty() || !line.trn.text.isEmpty())

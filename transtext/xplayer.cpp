@@ -200,7 +200,7 @@ void xPlayer::nextImage() {
 				pnt.begin(&BGOVL);
 				foreach(bgimg, imgs) {
 					if (pxm.load(bgimg.path)) {
-						// qDebug() << "ovl size " << pxm.size() << "over canvas" << BGOVL.size();
+					//	qDebug() << "ovl pos" << bgimg.xpos << bgimg.ypos;
 						pnt.drawPixmap(bgimg.xpos, bgimg.ypos, pxm);
 					}
 				}
